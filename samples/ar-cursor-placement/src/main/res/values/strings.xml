@@ -9,4 +9,5 @@
     <string name="title_dashboard">Map</string>
     <string name="title_notifications">List</string>
     <string name="done">Done</string>
+    <string name="hello_view_node">Hello ViewNode</string>
 </resources>

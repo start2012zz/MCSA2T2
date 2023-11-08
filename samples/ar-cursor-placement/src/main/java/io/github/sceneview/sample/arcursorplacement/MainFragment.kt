@@ -3,13 +3,28 @@ package io.github.sceneview.sample.arcursorplacement
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.DownloadManager
 import android.content.Context
+import android.content.Context.DOWNLOAD_SERVICE
+import android.content.Intent
 import android.content.pm.PackageManager
+
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
+import android.util.Base64
 import android.util.Log
 import android.view.View
+import android.webkit.CookieManager
+import android.webkit.JavascriptInterface
+import android.webkit.URLUtil
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
+import android.webkit.WebSettings
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -19,6 +34,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.webkit.WebViewAssetLoader
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
@@ -34,33 +50,18 @@ import io.github.sceneview.ar.node.ArModelNode
 import io.github.sceneview.ar.node.ArNode
 import io.github.sceneview.ar.node.CursorNode
 import io.github.sceneview.ar.node.PlacementMode
+import io.github.sceneview.node.ModelNode
 import io.github.sceneview.material.setBaseColor
 import io.github.sceneview.math.Position
 import io.github.sceneview.math.Scale
 import io.github.sceneview.math.toFloat3
 import io.github.sceneview.model.GLBLoader
+import io.github.sceneview.node.ViewNode
 import io.github.sceneview.model.ModelInstance
 import io.github.sceneview.utils.Color
 import kotlinx.coroutines.delay
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
-import java.io.IOException
-import android.graphics.BitmapFactory
-import android.net.Uri
-import android.webkit.JavascriptInterface
-import android.webkit.WebResourceRequest
-import android.webkit.WebResourceResponse
-import android.webkit.WebSettings
-import android.webkit.WebViewClient
-import androidx.webkit.WebViewAssetLoader
 import java.io.File
-import java.io.FileOutputStream
-import java.lang.Thread.sleep
 
 
 lateinit var newVector: Vector3
@@ -96,6 +97,7 @@ data class ModelData(
     val scale: Scale?,
     val fileLocation: String
 )
+data class GPSData(val latitude: Double, val longitude: Double, val altitude: Double)
 
 class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
 
@@ -132,8 +134,6 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
         set(value) {
             field = value
             loadingView.isGone = !value
-//            anchorButton.isGone = value
-//            addNodeBtn.isGone = value
         }
 
     companion object {
@@ -144,24 +144,42 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
-        webView = view.findViewById(R.id.webView)
+
 
         loadingView = view.findViewById(R.id.loadingView)
         modelsView = view.findViewById(R.id.modelsRV)
+        webView = view.findViewById(R.id.webView)
         setupWebView()
 
         webAppInterface = WebAppInterface(this, webView)
-        webView.addJavascriptInterface(webAppInterface, "Android")
-        val modelsDirectory = File(this.context?.filesDir , "models")
-        Log.e("modelsDirectory", modelsDirectory.toString())
+        webView.addJavascriptInterface(webAppInterface, "AndroidInterface")
+//        setupWebView()
+
+        webView.loadUrl("https://appassets.androidplatform.net/assets/3.html")
+//        webView.loadUrl("https:www.google.com")
+        webView.isVisible=false
+        val modelsFolder = File(requireContext().filesDir, "models")
+        Log.e("modelsDirectory", modelsFolder.toString())
+        Log.e("modelsDirectory", modelsFolder.exists().toString())
+        if (modelsFolder.exists() && modelsFolder.isDirectory) {
+            // List all files in the directory
+            val files = modelsFolder.listFiles()
+            // Check if 'files' is not null and then iterate over the array
+            files?.forEach { file ->
+                // Print the name of each file
+                Log.e("FileName", file.name)
+            }
+        } else {
+            Log.e("modelsDirectory", "The directory does not exist or is not a directory")
+        }
         assetLoader = WebViewAssetLoader.Builder()
             .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(requireContext()))
             .addPathHandler("/res/", WebViewAssetLoader.ResourcesPathHandler(requireContext()))
-            .addPathHandler("/files/models/", WebViewAssetLoader.InternalStoragePathHandler(requireContext(), modelsDirectory))
+            .addPathHandler("/files/models/", WebViewAssetLoader.InternalStoragePathHandler(requireContext(), modelsFolder))
 
             .build()
-        webView.loadUrl("https://appassets.androidplatform.net/assets/3.html")
-        webView.isVisible=false
+
+
         addNodeBtn = view.findViewById<ExtendedFloatingActionButton>(R.id.addNodeButton).apply {
             setOnClickListener {
                 // Record current cursor position
@@ -452,9 +470,9 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
             Log.e("lineThings", "to:$to")
 
             // prepare an anchor position
-            val camQ = scene.cameraNode.worldQuaternion
-            val f1 = floatArrayOf(to.x, to.y, to.z)
-            val f2 = floatArrayOf(camQ.x, camQ.y, camQ.z, camQ.w)
+//            val camQ = scene.cameraNode.worldQuaternion
+//            val f1 = floatArrayOf(to.x, to.y, to.z)
+//            val f2 = floatArrayOf(camQ.x, camQ.y, camQ.z, camQ.w)
             //val anchorPose = Pose(f1, f2)
 
             // make an ARCore Anchor
@@ -587,17 +605,14 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
 
     fun doneAndGenerate() {
         Log.e("doneAndGenerate", "executed")
-
-
-
         webView.isVisible=true
+
         getLocation(object : LocationCallback {
             override fun onLocationResult(latitude: Double, longitude: Double, altitude: Double) {
                 val layoutPositions = anchors.map { anchor ->
                     val pose = anchor.pose
                     AnchorData(pose.tx(), pose.ty(), pose.tz())
                 }
-                Log.e("doneAndGenerate", "before-map" + modelPlaceList.toString())
                 val modelsPositions = modelPlaceList.map {
                     val pose = it.anchor?.pose
                     ModelData(
@@ -609,8 +624,6 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
                         it.model.fileLocation
                     )
                 }
-                Log.e("doneAndGenerate", "after-map" + modelsPositions.toString())
-
                 // Include location data in your request
                 val data = mapOf(
                     "layoutPositions" to layoutPositions,
@@ -619,47 +632,11 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
                     "longitude" to longitude,
                     "altitude" to altitude
                 )
-                val anchorsJson = Gson().toJson(layoutPositions)
-                val modelPlacementJson = Gson().toJson(modelsPositions)
-//                webView.evaluateJavascript("javascript:window.AndroidInterface.receiveAnchorsData('$anchorsJson')", null)
-//                webView.evaluateJavascript("javascript:window.AndroidInterface.receiveModelPlacementData('$modelPlacementJson')", null)
-
-//                val jsonData = gson.toJson(data)
-//                isLoading = true
-//                val body = jsonData.toRequestBody("application/json".toMediaTypeOrNull())
-//                val request = Request.Builder()
-//                    .url("https://mobiles-2a62216dada4.herokuapp.com/scene")
-//                    .post(body)
-//                    .build()
-//                Log.e("doneAndGenerate", jsonData.toString())
-//                Log.e("doneAndGenerate", request.toString())
-//                client.newCall(request).enqueue(object : Callback {
-//                    override fun onFailure(call: Call, e: IOException) {
-//                        e.printStackTrace()
-//                    }
-//
-//                    override fun onResponse(call: Call, response: Response) {
-//                        activity?.runOnUiThread {
-//                            if (response.isSuccessful) {
-//                                isLoading = false
-//                                Log.e(
-//                                    "doneAndGenerate",
-//                                    "Request successful with code: ${response.code}"
-//                                )
-//                                Log.e("doneAndGenerate", response.body.toString())
-//                                // Handle response
-//                                // Close the current activity and return to the previous one
-//                                activity?.finish()
-//                            } else {
-//                                Log.e(
-//                                    "doneAndGenerate",
-//                                    "Request failed with code: ${response.code}"
-//                                )
-//                                // Handle the error
-//                            }
-//                        }
-//                    }
-//                })
+                val dataJson=gson.toJson(data)
+                webView.evaluateJavascript("javascript:window.AndroidInterface.receiveData('$dataJson')", null)
+                Log.e("doneAndGenerate", "data send" )
+                isLoading=true
+                webAppInterface.closeWebViewT("654bdaf7f9e5b6180f7a6518")
             }
 
             override fun onPermissionDenied() {
@@ -674,46 +651,6 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
         })
     }
 
-
-    fun copyAssetFileToInternalStorage(context: Context, assetFileName: String, outputDirectoryName: String) {
-        val assetManager = context.assets
-        val inputStream = assetManager.open(assetFileName)
-        val outputDirectory = File(context.filesDir, outputDirectoryName)
-
-        // Ensure that the output directory exists
-        if (!outputDirectory.exists()) {
-            outputDirectory.mkdirs()
-        }
-
-        val outputFile = File(outputDirectory, assetFileName)
-
-        // Write the inputStream to a FileOutputStream
-        inputStream.use { input ->
-            FileOutputStream(outputFile).use { output ->
-                input.copyTo(output)
-            }
-        }
-    }
-
-    fun isGlbFileValid(file: File): Boolean {
-        val glbHeader = byteArrayOf(0x67.toByte(), 0x6C.toByte(), 0x54.toByte(), 0x46.toByte()) // ASCII for glTF
-
-        if (!file.exists() || !file.isFile) {
-            return false
-        }
-
-        try {
-            val inputStream = file.inputStream()
-            val header = ByteArray(4)
-            inputStream.read(header, 0, 4)
-            inputStream.close()
-
-            return header.contentEquals(glbHeader)
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
-        return false
-    }
     fun loadModelsFromFiles(context: Context, scale: Float = 0.6f): List<Model> {
         val models = mutableListOf<Model>()
         try {
@@ -751,33 +688,7 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
         return models
     }
 
-    private fun copyModelsFromAssetsToInternal(context: Context) {
-        val assetManager = context.assets
-        val modelsPath = "models" // The path in the assets folder where models are stored
 
-        try {
-            val models = assetManager.list(modelsPath)
-            models?.forEach { model ->
-                if (model.endsWith(".glb")) {
-                    val inputStream = assetManager.open("$modelsPath/$model")
-                    val outputFile = File(context.filesDir, "$modelsPath/$model")
-                    val outputStream = FileOutputStream(outputFile)
-
-                    val buffer = ByteArray(1024)
-                    var length: Int
-                    while (inputStream.read(buffer).also { length = it } > 0) {
-                        outputStream.write(buffer, 0, length)
-                    }
-
-                    outputStream.flush()
-                    outputStream.close()
-                    inputStream.close()
-                }
-            }
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
-    }
 //    fun updateButton() {
 //        // Define your condition for updating the button
 //        val shouldUpdateButton = //... your_condition_to_change_button ...
@@ -844,6 +755,14 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
             override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
 
                 return request?.url?.let { assetLoader.shouldInterceptRequest(it) }
+//                return request?.url?.let { assetLoader.shouldInterceptRequest(Uri.parse(it.toString())) }
+            }
+
+            override fun shouldInterceptRequest(
+                view: WebView,
+                url: String
+            ): WebResourceResponse? {
+                return assetLoader.shouldInterceptRequest(Uri.parse(url))
             }
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
@@ -853,39 +772,92 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
 
         }
 
-    }
-
-    private fun loadWebView() {
-        webView.webViewClient = object : WebViewClient() {
-            override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
-
-                return request?.url?.let { assetLoader.shouldInterceptRequest(it) }
-            }
-            override fun onPageFinished(view: WebView?, url: String?) {
-                super.onPageFinished(view, url)
-
-                sendDataToWebView()
-            }
-
+        webView.setDownloadListener { url, userAgent, contentDisposition, mimetype, _ ->
+            val request = DownloadManager.Request(Uri.parse(url))
+            request.setMimeType(mimetype)
+            request.addRequestHeader("cookie", CookieManager.getInstance().getCookie(url))
+            request.addRequestHeader("User-Agent", userAgent)
+            request.setDescription("Downloading file...")
+            request.setTitle(URLUtil.guessFileName(url, contentDisposition, mimetype))
+            request.allowScanningByMediaScanner()
+            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, URLUtil.guessFileName(url, contentDisposition, mimetype))
+            val dm = context?.getSystemService(DOWNLOAD_SERVICE) as DownloadManager
+            dm.enqueue(request)
+            Toast.makeText(context, "Downloading File", Toast.LENGTH_LONG).show()
         }
+
+
     }
 
-    private fun sendDataToWebView() {
-        val anchorsJson = Gson().toJson(anchors)
-        val modelPlacementJson = Gson().toJson(modelPlaceList)
-        webView.evaluateJavascript("javascript:window.AndroidInterface.receiveAnchorsData('$anchorsJson')", null)
-        webView.evaluateJavascript("javascript:window.AndroidInterface.receiveModelPlacementData('$modelPlacementJson')", null)
-    }
+
+
     class WebAppInterface(private val context: MainFragment, private val webView: WebView) {
+        @JavascriptInterface
+        fun closeWebViewT(receivedId: String) {
+            Log.e("closeWebView", receivedId)
+            context.isLoading=false
+            fragment.requireActivity().runOnUiThread {
+                // Prepare the new fragment and pass the ID to it
+                val newFragment = ViewFragment.newInstance(receivedId)
+
+                // Replace the current fragment with the new one
+                fragment.parentFragmentManager.beginTransaction().apply {
+                    replace(R.id.containerFragment, newFragment)
+                    addToBackStack(null) // If you want to add the transaction to the back stack
+                    commitAllowingStateLoss()
+                }
+
+//            fragment.activity?.runOnUiThread {
+//                // Prepare the new fragment and pass the ID to it
+//                val newFragment = NewFragment().apply {
+//                    arguments = Bundle().apply {
+//                        putString("EXTRA_ID", receivedId)
+//                    }
+//                }
+//
+//                // Replace the current fragment with the new one
+//                fragment.parentFragmentManager.beginTransaction()
+//                    .replace(R.id.fragment_container, newFragment) // Use the ID of your container
+//                    .commitAllowingStateLoss()
+//
+//                // If you added the fragment to the back stack and want to remove it
+//                // fragmen
+            context.activity?.finish()
+        }
+
+
+
+        @JavascriptInterface
+        fun receiveData(dataJson: String) {
+            webView.post {
+                webView.evaluateJavascript("javascript:receiveData('$dataJson')", null)
+            }
+        }
+
+        @JavascriptInterface
+        fun receiveModelPlacementData(modelPlacementJson: String) {
+            webView.post {
+                webView.evaluateJavascript("javascript:receiveModelPlacementData('$modelPlacementJson')", null)
+            }
+        }
+        @JavascriptInterface
+        fun receiveAnchorsData(anchorsJson: String) {
+            webView.post {
+                webView.evaluateJavascript("javascript:receiveAnchorsData('$anchorsJson')", null)
+            }
+        }
 
         @JavascriptInterface
         fun sendDataToAndroid(dataJson: String) {
             // Process the data here
             Log.d("WebAppInterface", "Data received from web: $dataJson")
         }
+
+
+
+
     }
-
-
 }
 
 

@@ -2,14 +2,11 @@ package io.github.sceneview.sample.modelviewer
 
 import android.os.Bundle
 import android.util.Log
-import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.commit
-import io.github.sceneview.utils.doOnApplyWindowInsets
 import io.github.sceneview.utils.setFullScreen
 
-class Activity : AppCompatActivity(R.layout.activity) {
+class Activity : AppCompatActivity(R.layout.viewactivity) {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,7 +26,7 @@ class Activity : AppCompatActivity(R.layout.activity) {
 //        })
         Log.e("Activity", "onCreate")
         supportFragmentManager.commit {
-            add(R.id.containerFragment, MainFragment::class.java, Bundle())
+            add(R.id.containerFragment, ViewFragment::class.java, Bundle())
         }
     }
 }
