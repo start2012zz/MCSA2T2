@@ -2,6 +2,7 @@ package mobile.ui.login_signup;
 
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -27,6 +28,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import io.github.sceneview.sample.arcursorplacement.R;
+
 public class LoginActivity extends AppCompatActivity {
 
     private EditText emailEditText;
@@ -47,7 +50,7 @@ public class LoginActivity extends AppCompatActivity {
         passwordEditText = findViewById(R.id.edit_senha);
         loginButton = findViewById(R.id.bt_entrar);
         signUpTextView = findViewById(R.id.bt_signup);
-        forgotPasswordTextView = findViewById(R.id.textViewForgotPassword);
+//        forgotPasswordTextView = findViewById(R.id.textViewForgotPassword);
 
         loginButton.setOnClickListener(new View.OnClickListener() {
             @Override

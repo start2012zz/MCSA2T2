@@ -20,6 +20,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.UnsupportedEncodingException;
 
+import io.github.sceneview.sample.arcursorplacement.R;
+
 public class SignUpActivity extends AppCompatActivity {
 
     private EditText emailEditText;
@@ -33,7 +35,7 @@ public class SignUpActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.signup_layout);
+        setContentView(R.layout.sign_home);
 
         emailEditText = findViewById(R.id.register_email_text);
         passwordEditText = findViewById(R.id.register_password_text);
