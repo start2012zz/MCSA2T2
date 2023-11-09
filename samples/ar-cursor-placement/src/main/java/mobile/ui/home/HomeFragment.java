@@ -36,6 +36,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Stack;
 
 
 public class HomeFragment extends Fragment {
@@ -47,6 +48,8 @@ public class HomeFragment extends Fragment {
     ArrayList<ListData> dataArrayList = new ArrayList<>();
 
     ListData listData;
+
+    ArrayList<ListData> dataItems = new ArrayList<>();
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -73,6 +76,7 @@ public class HomeFragment extends Fragment {
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
 //                Intent intent = new Intent(packageContext:MainActivity.this, DetailedActivity.class;
 //                startActivity(intent);
+                  //downloadFurnitureRequest(dataItem.get(i).address);
             }
         });
         makeRequest();
@@ -115,7 +119,8 @@ public class HomeFragment extends Fragment {
                             @Override
                             public void onResponse(JSONArray response) {
                                 try {
-                                    ArrayList<ListData> dataItems = new ArrayList<>();
+                                    dataItems = new ArrayList<>();
+
                                     for (int i = 0; i < response.length(); i++) {
                                         JSONObject itemObj = response.getJSONObject(i);
                                         String name = itemObj.getString("name");
