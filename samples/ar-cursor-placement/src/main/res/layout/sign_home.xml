@@ -36,7 +36,7 @@
             app:layout_constraintTop_toBottomOf="@id/logo" />
 
         <EditText
-            android:id="@+id/edit_email"
+            android:id="@+id/register_email_text"
             style="@style/Edit_Text"
             android:layout_width="268dp"
             android:layout_height="60dp"
@@ -51,7 +51,7 @@
             app:layout_constraintTop_toTopOf="@+id/containerComponents" />
 
         <EditText
-            android:id="@+id/edit_senha"
+            android:id="@+id/register_password_text"
             style="@style/Edit_Text"
             android:layout_width="268dp"
             android:layout_height="60dp"
@@ -62,10 +62,10 @@
             app:layout_constraintEnd_toEndOf="@id/containerComponents"
             app:layout_constraintHorizontal_bias="0.413"
             app:layout_constraintStart_toStartOf="@+id/containerComponents"
-            app:layout_constraintTop_toBottomOf="@id/edit_email" />
+            app:layout_constraintTop_toBottomOf="@id/register_email_text" />
 
         <EditText
-            android:id="@+id/edit_name"
+            android:id="@+id/register_name_text"
             style="@style/Edit_Text"
             android:layout_width="268dp"
             android:layout_height="60dp"
@@ -80,7 +80,7 @@
 
 
         <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/bt_entrar"
+            android:id="@+id/bt_register"
             style="@style/Button"
             android:layout_width="242dp"
             android:layout_height="65dp"
@@ -89,7 +89,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.497"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/edit_senha" />
+            app:layout_constraintTop_toBottomOf="@id/register_password_text" />
 
         <ProgressBar
             android:id="@+id/progressbar"
