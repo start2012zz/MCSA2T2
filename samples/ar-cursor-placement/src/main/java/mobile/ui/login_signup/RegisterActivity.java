@@ -9,7 +9,7 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.widget.NestedScrollView;
+
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -22,7 +22,7 @@ import java.io.UnsupportedEncodingException;
 
 import io.github.sceneview.sample.arcursorplacement.R;
 
-public class SignUpActivity extends AppCompatActivity {
+public class RegisterActivity extends AppCompatActivity {
 
     private EditText emailEditText;
     private EditText passwordEditText;
@@ -53,7 +53,7 @@ public class SignUpActivity extends AppCompatActivity {
                 if (isValid(email, password, name)) {
                     signUp(email, password, name);
                 } else {
-                    Toast.makeText(SignUpActivity.this, "Invalid details", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(RegisterActivity.this, "Invalid details", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -118,7 +118,7 @@ public class SignUpActivity extends AppCompatActivity {
 
                         // Handle the registration response as needed
                         progressBar.setVisibility(View.INVISIBLE);
-                        Toast.makeText(SignUpActivity.this, "Registration Successful", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(RegisterActivity.this, "Registration Successful", Toast.LENGTH_SHORT).show();
                         finish(); // Close the SignUpActivity after successful registration
                     }
                 },
@@ -128,7 +128,7 @@ public class SignUpActivity extends AppCompatActivity {
                         Log.e("requestTest", "Registration Error: " + error.getMessage());
                         progressBar.setVisibility(View.INVISIBLE);
                         // Handle registration error
-                        Toast.makeText(SignUpActivity.this, "Registration Error", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(RegisterActivity.this, "Registration Error", Toast.LENGTH_SHORT).show();
                     }
                 }) {
             @Override
