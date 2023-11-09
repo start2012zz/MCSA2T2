@@ -1,25 +1,17 @@
 package io.github.sceneview.sample.arcursorplacement
 
-
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.DownloadManager
 import android.content.Context
-import android.content.Context.DOWNLOAD_SERVICE
 import android.content.Intent
 import android.content.pm.PackageManager
-
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
-import android.util.Base64
 import android.util.Log
 import android.view.View
-import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
-import android.webkit.URLUtil
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
@@ -50,13 +42,11 @@ import io.github.sceneview.ar.node.ArModelNode
 import io.github.sceneview.ar.node.ArNode
 import io.github.sceneview.ar.node.CursorNode
 import io.github.sceneview.ar.node.PlacementMode
-import io.github.sceneview.node.ModelNode
 import io.github.sceneview.material.setBaseColor
 import io.github.sceneview.math.Position
 import io.github.sceneview.math.Scale
 import io.github.sceneview.math.toFloat3
 import io.github.sceneview.model.GLBLoader
-import io.github.sceneview.node.ViewNode
 import io.github.sceneview.model.ModelInstance
 import io.github.sceneview.utils.Color
 import kotlinx.coroutines.delay
@@ -97,7 +87,7 @@ data class ModelData(
     val scale: Scale?,
     val fileLocation: String
 )
-data class GPSData(val latitude: Double, val longitude: Double, val altitude: Double)
+
 
 class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
 
@@ -157,7 +147,7 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
 
         webView.loadUrl("https://appassets.androidplatform.net/assets/3.html")
 //        webView.loadUrl("https:www.google.com")
-        webView.isVisible=false
+        webView.isVisible = false
         val modelsFolder = File(requireContext().filesDir, "models")
         Log.e("modelsDirectory", modelsFolder.toString())
         Log.e("modelsDirectory", modelsFolder.exists().toString())
@@ -175,7 +165,10 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
         assetLoader = WebViewAssetLoader.Builder()
             .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(requireContext()))
             .addPathHandler("/res/", WebViewAssetLoader.ResourcesPathHandler(requireContext()))
-            .addPathHandler("/files/models/", WebViewAssetLoader.InternalStoragePathHandler(requireContext(), modelsFolder))
+            .addPathHandler(
+                "/files/models/",
+                WebViewAssetLoader.InternalStoragePathHandler(requireContext(), modelsFolder)
+            )
 
             .build()
 
@@ -305,9 +298,6 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
         placeBtn.isVisible = false
         doneBtn.isVisible = false
 
-
-
-
         lifecycleScope.launchWhenCreated {
             modelInstance = GLBLoader.loadModelInstance(
                 context = requireContext(),
@@ -375,16 +365,11 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
             modelNode?.modelRotation, currentItem,
             modelNode?.modelScale
         )
-
-
-
         Log.e("nextTask:,model", placedModel.anchor?.pose.toString())
         Log.e("doneAndGenerate--:,model", placedModel.rotation.toString())
         Log.e("doneAndGenerate--:", "place" + placedModel.toString())
         modelPlaceList.add(placedModel)
         doneBtn.isVisible = true
-
-
     }
 
     override fun onModelClick(model: Model) {
@@ -455,7 +440,6 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
 
     }
 
-
     suspend fun addLineBetweenPoints(
         hitResult: HitResult,
         scene: SceneView,
@@ -469,12 +453,6 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
             Log.e("lineThings", "from:$from")
             Log.e("lineThings", "to:$to")
 
-            // prepare an anchor position
-//            val camQ = scene.cameraNode.worldQuaternion
-//            val f1 = floatArrayOf(to.x, to.y, to.z)
-//            val f2 = floatArrayOf(camQ.x, camQ.y, camQ.z, camQ.w)
-            //val anchorPose = Pose(f1, f2)
-
             // make an ARCore Anchor
             val anchor = hitResult.createAnchor()
             // Node that is automatically positioned in world space based on the ARCore Anchor.
@@ -484,17 +462,12 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
 
             // Compute a line's length
             val lineLength = Vector3.subtract(from, to).length() * 1.5f
-
-
-            // Ensure you have a valid context here. Handle the case where requireContext() might return null.
             val context = requireContext()
-            // Ensure you have a valid co
-            // Load a new model instance for each tap
             val modelIns = GLBLoader.loadModelInstance(
                 context = context,
                 glbFileLocation = "layoutModel/cube.glb"
             ) as ModelInstance
-            // Ensure you have a valid co
+
             for (material in modelIns.materialInstances) {
                 material.setBaseColor(lineColor)
             }
@@ -533,8 +506,6 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
         } else {
             Log.e("flag", "false")
         }
-
-
     }
 
     fun disCursorToFirstAnchor(): Double {
@@ -590,22 +561,14 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
     fun updateButtonVisibility(hideAddButton: Boolean) {
         activity?.runOnUiThread {
             addNodeBtn.isGone = hideAddButton
-//            anchorButton.isVisible = hideAddButton // Adjust based on your specific requirement
         }
     }
-
-//    fun afterModelPlaceVisibility(){
-//        modelsView.isVisible=false
-//        placeBtn.isVisible=false
-//        hideAddButton = false
-//        updateButtonVisibility(hideAddButton)
-//    }
-
 
 
     fun doneAndGenerate() {
         Log.e("doneAndGenerate", "executed")
-        webView.isVisible=true
+        webView.isVisible = false
+        placeBtn.isVisible=false
 
         getLocation(object : LocationCallback {
             override fun onLocationResult(latitude: Double, longitude: Double, altitude: Double) {
@@ -624,7 +587,6 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
                         it.model.fileLocation
                     )
                 }
-                // Include location data in your request
                 val data = mapOf(
                     "layoutPositions" to layoutPositions,
                     "modelsPositions" to modelsPositions,
@@ -632,21 +594,25 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
                     "longitude" to longitude,
                     "altitude" to altitude
                 )
-                val dataJson=gson.toJson(data)
-                webView.evaluateJavascript("javascript:window.AndroidInterface.receiveData('$dataJson')", null)
-                Log.e("doneAndGenerate", "data send" )
-                isLoading=true
-                webAppInterface.closeWebViewT("654bdaf7f9e5b6180f7a6518")
+                val dataJson = gson.toJson(data)
+                webView.evaluateJavascript(
+                    "javascript:window.AndroidInterfaceT.receiveData('$dataJson')",
+                    null
+                )
+                Log.e("doneAndGenerate", "data send")
+                isLoading = true
+
+//                sleep(3000)
+//                webAppInterface.closeWebViewT("654bdaf7f9e5b6180f7a6518")
+                Log.e("doneAndGenerate", "webAppInterface.closeWebViewT")
             }
 
             override fun onPermissionDenied() {
                 Log.e("doneAndGenerate", "Location permission denied")
-                // Handle the case where permissions are denied
             }
 
             override fun onLocationUnavailable() {
                 Log.e("doneAndGenerate", "Location is unavailable")
-                // Handle the case where location is unavailable
             }
         })
     }
@@ -654,7 +620,6 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
     fun loadModelsFromFiles(context: Context, scale: Float = 0.6f): List<Model> {
         val models = mutableListOf<Model>()
         try {
-//            copyModelsFromAssetsToInternal(context)
             val modelsFolder = File(context.filesDir, "models")
             val imagesFolder = File(context.filesDir, "images")
 
@@ -663,7 +628,10 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
 
                 modelFiles?.forEach { modelFile ->
                     val displayName = modelFile.name.substringBeforeLast(".glb")
-                    val imageFile = File(imagesFolder, "${displayName}.png") // Assuming images are in PNG format
+                    val imageFile = File(
+                        imagesFolder,
+                        "${displayName}.png"
+                    ) // Assuming images are in PNG format
                     val modelImageBitmap: Bitmap? = if (imageFile.exists()) {
                         BitmapFactory.decodeFile(imageFile.absolutePath)
                     } else {
@@ -672,7 +640,6 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
                     models.add(
                         Model(
                             Uri.fromFile(modelFile).toString(),
-//                            modelFile.absolutePath,
                             displayName,
                             modelImageBitmap,
                             scale
@@ -683,30 +650,8 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
         } catch (e: Exception) {
             e.printStackTrace()
         }
-        Log.e("models", models.toString())
-        Log.e("models", models.size.toString())
         return models
     }
-
-
-//    fun updateButton() {
-//        // Define your condition for updating the button
-//        val shouldUpdateButton = //... your_condition_to_change_button ...
-//
-//            // Run on UI thread to safely update UI components
-//            activity?.runOnUiThread {
-//                if (hideAddButton) {
-//                    // Set new text on the button
-//                    addNodeBtn.setText("New Button Text")
-//
-//                    // Set new OnClickListener with new action
-//                    addNodeBtn.setOnClickListener {
-//                        // New onClick action here
-//                        // ...
-//                    }
-//                }
-//            }
-//    }
 
 
     private fun getLocation(callback: LocationCallback) {
@@ -752,10 +697,12 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
         webSettings.allowFileAccess = true
         webSettings.allowContentAccess = true
         webView.webViewClient = object : WebViewClient() {
-            override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
+            override fun shouldInterceptRequest(
+                view: WebView?,
+                request: WebResourceRequest?
+            ): WebResourceResponse? {
 
                 return request?.url?.let { assetLoader.shouldInterceptRequest(it) }
-//                return request?.url?.let { assetLoader.shouldInterceptRequest(Uri.parse(it.toString())) }
             }
 
             override fun shouldInterceptRequest(
@@ -764,87 +711,78 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
             ): WebResourceResponse? {
                 return assetLoader.shouldInterceptRequest(Uri.parse(url))
             }
+
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
-
-//                sendDataToWebView()
             }
-
         }
-
-        webView.setDownloadListener { url, userAgent, contentDisposition, mimetype, _ ->
-            val request = DownloadManager.Request(Uri.parse(url))
-            request.setMimeType(mimetype)
-            request.addRequestHeader("cookie", CookieManager.getInstance().getCookie(url))
-            request.addRequestHeader("User-Agent", userAgent)
-            request.setDescription("Downloading file...")
-            request.setTitle(URLUtil.guessFileName(url, contentDisposition, mimetype))
-            request.allowScanningByMediaScanner()
-            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, URLUtil.guessFileName(url, contentDisposition, mimetype))
-            val dm = context?.getSystemService(DOWNLOAD_SERVICE) as DownloadManager
-            dm.enqueue(request)
-            Toast.makeText(context, "Downloading File", Toast.LENGTH_LONG).show()
-        }
-
-
     }
 
 
-
     class WebAppInterface(private val context: MainFragment, private val webView: WebView) {
-        @JavascriptInterface
-        fun closeWebViewT(receivedId: String) {
-            Log.e("closeWebView", receivedId)
-            context.isLoading=false
-            fragment.requireActivity().runOnUiThread {
-                // Prepare the new fragment and pass the ID to it
-                val newFragment = ViewFragment.newInstance(receivedId)
-
-                // Replace the current fragment with the new one
-                fragment.parentFragmentManager.beginTransaction().apply {
-                    replace(R.id.containerFragment, newFragment)
-                    addToBackStack(null) // If you want to add the transaction to the back stack
-                    commitAllowingStateLoss()
-                }
-
-//            fragment.activity?.runOnUiThread {
+        //        @JavascriptInterface
+//        fun closeWebViewT(receivedId: String) {
+//            Log.e("closeWebView", receivedId)
+//            context.isLoading = false
+//            context.requireActivity().runOnUiThread {
 //                // Prepare the new fragment and pass the ID to it
-//                val newFragment = NewFragment().apply {
-//                    arguments = Bundle().apply {
-//                        putString("EXTRA_ID", receivedId)
-//                    }
-//                }
+//                val newFragment = ViewFragment.newInstance(receivedId)
 //
 //                // Replace the current fragment with the new one
-//                fragment.parentFragmentManager.beginTransaction()
-//                    .replace(R.id.fragment_container, newFragment) // Use the ID of your container
-//                    .commitAllowingStateLoss()
+//                context.parentFragmentManager.beginTransaction().apply {
+//                    replace(R.id.containerFragment, newFragment)
+//                    addToBackStack(null) // If you want to add the transaction to the back stack
+//                    commit()
+////                    commitAllowingStateLoss()
+//                }
 //
-//                // If you added the fragment to the back stack and want to remove it
-//                // fragmen
-            context.activity?.finish()
-        }
-
-
-
+//            }
         @JavascriptInterface
-        fun receiveData(dataJson: String) {
-            webView.post {
-                webView.evaluateJavascript("javascript:receiveData('$dataJson')", null)
+        fun closeWebViewT(receivedId: String) {
+            // Run on the UI thread because you're performing UI operations
+            context.requireActivity().runOnUiThread {
+                context.isLoading = false
+
+                // Intent to start a new Activity
+                val intent = Intent(context.requireContext(), ViewActivity::class.java).apply {
+                    // Put any necessary extras
+                    putExtra(ViewActivity.EXTRA_ID, receivedId)
+                }
+
+                // Start the new activity
+                context.startActivity(intent)
+
+                // Finish the current Activity only after the next Activity has been started
+                // This ensures that the current Activity is still running until the next one is fully operational
+                context.requireActivity().finish()
             }
         }
+
+
+//        @JavascriptInterface
+//        fun receiveData(dataJson: String) {
+//            webView.post {
+//                webView.evaluateJavascript("javascript:receiveData('$dataJson')", null)
+//            }
+//        }
 
         @JavascriptInterface
         fun receiveModelPlacementData(modelPlacementJson: String) {
             webView.post {
-                webView.evaluateJavascript("javascript:receiveModelPlacementData('$modelPlacementJson')", null)
+                webView.evaluateJavascript(
+                    "javascript:receiveModelPlacementData('$modelPlacementJson')",
+                    null
+                )
             }
         }
+
         @JavascriptInterface
         fun receiveAnchorsData(anchorsJson: String) {
             webView.post {
-                webView.evaluateJavascript("javascript:receiveAnchorsData('$anchorsJson')", null)
+                webView.evaluateJavascript(
+                    "javascript:receiveAnchorsData('$anchorsJson')",
+                    null
+                )
             }
         }
 
@@ -855,11 +793,5 @@ class MainFragment : Fragment(R.layout.fragment_main), OnModelClickListener {
         }
 
 
-
-
     }
 }
-
-
-
-

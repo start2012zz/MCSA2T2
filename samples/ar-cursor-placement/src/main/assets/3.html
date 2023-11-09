@@ -42,7 +42,7 @@
     scene.add(layoutMesh);
 
     console.log("base init");
-    window.AndroidInterface = {
+    window.AndroidInterfaceT = {
         receiveAnchorsData: function (anchorsJson) {
             const anchorsList = JSON.parse(anchorsJson);
             console.log("anchor",anchorsList);
@@ -60,6 +60,7 @@
             updateLayoutMesh(data.layoutPositions);
             placeModel(data.modelsPositions);
         }
+
     };
 
     function updateLayoutMesh(anchorsList) {
@@ -207,9 +208,9 @@ async function exportTest() {
                     console.log(data.modelID);
                     console.log(data.modelID===data.modelID.toString());
                     console.log(data.modelID.toString());
-                    if (window.AndroidInterface && typeof window.AndroidInterface.closeWebViewT === 'function') {
+                    if (typeof AndroidInterface.closeWebViewT === 'function') {
                         console.log("close");
-                        window.AndroidInterface.closeWebViewT(data.modelID);
+                        AndroidInterface.closeWebViewT(data.modelID);
                     } else {
                         console.error('closeWebView function is not available on AndroidInterface.');
                     }
@@ -224,7 +225,6 @@ async function exportTest() {
             reader.readAsDataURL(blob);
         }, { binary: true });
     }
-
 
 
 
