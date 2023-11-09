@@ -20,7 +20,6 @@ class Activity : AppCompatActivity(R.layout.activity) {
             fitsSystemWindows = false
         )
 
-
         supportFragmentManager.commit {
             add(R.id.containerFragment, MainFragment::class.java, Bundle())
         }
